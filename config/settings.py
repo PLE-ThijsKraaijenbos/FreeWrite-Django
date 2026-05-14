@@ -1,4 +1,5 @@
 from decouple import config, Csv
+from django.urls import reverse_lazy
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -8,6 +9,9 @@ DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost", cast=Csv())
 
 INSTALLED_APPS = [
+    "unfold",
+    "unfold.contrib.filters",
+    "unfold.contrib.forms",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -16,10 +20,15 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
+    "user",
+    "journey",
 ]
+
+AUTH_USER_MODEL = "user.User"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -89,3 +98,103 @@ REST_FRAMEWORK = {
 }
 
 CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default="http://localhost:3000", cast=Csv())
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{asctime} {levelname} {filename} {funcName} {lineno} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{asctime} {levelname} - {message}',
+            'style': '{',
+        },
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'filters': ['require_debug_true'],
+            'formatter': 'simple',
+        },
+        'log_file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'api.log',
+            'maxBytes': 1024 * 1024 * 5,
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+        'error_file': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'api_error.log',
+            'maxBytes': 1024 * 1024 * 5,
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+        'mail_admins': {
+            'level': 'ERROR',
+            'class': 'django.utils.log.AdminEmailHandler',
+            'filters': ['require_debug_false'],
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django_project_api': {
+            'handlers': ['console', 'log_file', 'error_file', 'mail_admins'],
+            'level': 'DEBUG',
+        },
+        'django.request': {
+            'handlers': ['mail_admins', 'error_file'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
+
+UNFOLD = {
+    "SITE_TITLE": "FreeWrite Admin",
+    "SITE_HEADER": "FreeWrite",
+    "SIDEBAR": {
+        "navigation": [
+            {
+                "title": "Users",
+                "items": [
+                    {"title": "Users", "icon": "person", "link": reverse_lazy("admin:user_user_changelist")},
+                    {"title": "User Profiles", "icon": "manage_accounts", "link": reverse_lazy("admin:user_userprofile_changelist")},
+                ],
+            },
+            {
+                "title": "Journey",
+                "items": [
+                    {"title": "Phases", "icon": "layers", "link": reverse_lazy("admin:journey_phase_changelist")},
+                    {"title": "Journey Steps", "icon": "format_list_numbered", "link": reverse_lazy("admin:journey_journeystep_changelist")},
+                    {"title": "Journeys", "icon": "route", "link": reverse_lazy("admin:journey_journey_changelist")},
+                    {"title": "Step Progress", "icon": "track_changes", "link": reverse_lazy("admin:journey_journeystepprogress_changelist")},
+                ],
+            },
+            {
+                "title": "Minigame Content",
+                "items": [
+                    {"title": "Journal", "icon": "book", "link": reverse_lazy("admin:journey_journalcontent_changelist")},
+                    {"title": "Letter", "icon": "mail", "link": reverse_lazy("admin:journey_lettercontent_changelist")},
+                    {"title": "Choice Story", "icon": "account_tree", "link": reverse_lazy("admin:journey_choicestorycontent_changelist")},
+                    {"title": "Speech Bubble", "icon": "chat_bubble", "link": reverse_lazy("admin:journey_speechbubblecontent_changelist")},
+                    {"title": "Bubble Pop", "icon": "interests", "link": reverse_lazy("admin:journey_bubblepopcontent_changelist")},
+                    {"title": "Scale", "icon": "balance", "link": reverse_lazy("admin:journey_scalecontent_changelist")},
+                ],
+            },
+        ],
+    },
+}
