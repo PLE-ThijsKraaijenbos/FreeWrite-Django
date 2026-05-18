@@ -6,3 +6,5 @@ python-decouple==3.8
 gunicorn==23.0.0
 whitenoise==6.9.0
 django-unfold==0.64.1
+djangorestframework-simplejwt==5.5.0
+django-stubs==5.1.3

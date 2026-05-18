@@ -45,6 +45,7 @@ class Userprofile(models.Model):
         SIX_TO_TWELVE_MONTHS = "6-12M", "6 to 12 months"
         ONE_TO_TWO_YEARS = "1-2Y", "1 to 2 years"
         GREATER_THAN_TWO_YEARS = ">2Y", "2+ years"
+        NOT_SURE = "NOT_SURE", "I'm not sure"
     class Goal(models.TextChoices):
         USE_LESS = "USE_LESS", "I want to use less"
         QUIT = "QUIT", "I want to quit completely"
@@ -75,7 +76,7 @@ class Userprofile(models.Model):
     avatar_url = models.TextField(blank=True)
     name = models.TextField(blank=True)
     substance = models.CharField(max_length=20, choices=Substance.choices, blank=True)
-    usage_duration = models.CharField(max_length=10, choices=Duration.choices, blank=True)
+    usage_duration = models.CharField(max_length=20, choices=Duration.choices, blank=True)
     goal = models.CharField(max_length=20, choices=Goal.choices, blank=True)
     usage_times = models.CharField(max_length=20, choices=Times.choices, blank=True)
     frequency = models.CharField(max_length=20, choices=Frequency.choices, blank=True)
