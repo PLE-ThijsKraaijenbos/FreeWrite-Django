@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pip index *)"
+      "Bash(pip index *)",
+      "Bash(.venv\\\\Scripts\\\\python *)",
+      "Bash(docker exec freewrite-django-django-1 *)",
+      "Bash(xargs ls)"
+    ],
+    "additionalDirectories": [
+      "C:\\FreeWrite-React-Native"
     ]
   }
 }

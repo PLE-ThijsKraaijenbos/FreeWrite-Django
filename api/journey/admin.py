@@ -1,63 +1,91 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin
+
 from .models import (
-    Journey, JourneyStep, JourneyStepProgress, Phase,
+    Journey, JourneyStep, Phase,
     JournalContent, LetterContent, ChoiceStoryContent,
     SpeechBubbleContent, BubblePopContent, ScaleContent,
 )
 
 
 @admin.register(Phase)
-class PhaseAdmin(admin.ModelAdmin):
+class PhaseAdmin(ModelAdmin):
     list_display = ['title', 'order']
     ordering = ['order']
+    search_fields = ['title']
 
 
 @admin.register(JourneyStep)
-class JourneyStepAdmin(admin.ModelAdmin):
+class JourneyStepAdmin(ModelAdmin):
     list_display = ['title', 'phase', 'order', 'assignment_type', 'is_core', 'is_active']
     list_filter = ['phase', 'is_core', 'is_active', 'assignment_type']
     search_fields = ['title', 'description']
     ordering = ['phase__order', 'order']
+    autocomplete_fields = ['phase']
+    fieldsets = (
+        (None, {
+            'fields': ('phase', 'order', 'title', 'description', 'banner_url', 'is_core', 'activation_rules', 'is_active'),
+        }),
+        ('Content', {
+            'fields': (
+                'assignment_type',
+                'journal_content',
+                'letter_content',
+                'choice_story_content',
+                'speech_bubble_content',
+                'bubble_pop_content',
+                'scale_content',
+            ),
+        }),
+    )
+    conditional_fields = {
+        'journal_content': "assignment_type == 'journal'",
+        'letter_content': "assignment_type == 'letter'",
+        'choice_story_content': "assignment_type == 'choice_story'",
+        'speech_bubble_content': "assignment_type == 'speech_bubble'",
+        'bubble_pop_content': "assignment_type == 'bubble_pop'",
+        'scale_content': "assignment_type == 'scale'",
+    }
 
 
 @admin.register(Journey)
-class JourneyAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user']
+class JourneyAdmin(ModelAdmin):
+    list_display = ['user']
     search_fields = ['user__email']
-
-
-@admin.register(JourneyStepProgress)
-class JourneyStepProgressAdmin(admin.ModelAdmin):
-    list_display = ['journey', 'step', 'status', 'bookmarked', 'started_at', 'completed_at']
-    list_filter = ['status', 'bookmarked']
-    search_fields = ['journey__user__email']
+    autocomplete_fields = ['user']
 
 
 @admin.register(JournalContent)
-class JournalContentAdmin(admin.ModelAdmin):
-    list_display = ['id', 'title_text']
+class JournalContentAdmin(ModelAdmin):
+    list_display = ['title_text']
+    search_fields = ['title_text']
 
 
 @admin.register(LetterContent)
-class LetterContentAdmin(admin.ModelAdmin):
-    list_display = ['id', 'title_text']
+class LetterContentAdmin(ModelAdmin):
+    list_display = ['title_text']
+    search_fields = ['title_text']
 
 
 @admin.register(ChoiceStoryContent)
-class ChoiceStoryContentAdmin(admin.ModelAdmin):
-    list_display = ['id', 'title_text']
+class ChoiceStoryContentAdmin(ModelAdmin):
+    list_display = ['title_text']
+    search_fields = ['title_text']
 
 
 @admin.register(SpeechBubbleContent)
-class SpeechBubbleContentAdmin(admin.ModelAdmin):
-    list_display = ['id', 'title_text']
+class SpeechBubbleContentAdmin(ModelAdmin):
+    list_display = ['title_text']
+    search_fields = ['title_text']
 
 
 @admin.register(BubblePopContent)
-class BubblePopContentAdmin(admin.ModelAdmin):
-    list_display = ['id', 'title_text']
+class BubblePopContentAdmin(ModelAdmin):
+    list_display = ['title_text']
+    search_fields = ['title_text']
 
 
 @admin.register(ScaleContent)
-class ScaleContentAdmin(admin.ModelAdmin):
-    list_display = ['id', 'title_text', 'left_label', 'right_label']
+class ScaleContentAdmin(ModelAdmin):
+    list_display = ['title_text', 'left_label', 'right_label']
+    search_fields = ['title_text']

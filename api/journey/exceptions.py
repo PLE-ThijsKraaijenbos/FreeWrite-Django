@@ -1,7 +1,3 @@
-class JourneyAlreadyExists(Exception):
-    pass
-
-
 class StepAlreadyCompleted(Exception):
     pass
 

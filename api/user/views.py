@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .serializers import LoginSerializer, RegisterSerializer, UserProfileSerializer, UserSerializer
-from .services import complete_profile, login, register
+from .services import UserService
 
 
 class RegisterView(APIView):
@@ -13,7 +13,7 @@ class RegisterView(APIView):
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        result = register(**serializer.validated_data)
+        result = UserService.register(**serializer.validated_data)
         return Response({
             'access': result['access'],
             'refresh': result['refresh'],
@@ -21,13 +21,13 @@ class RegisterView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 
-class UserProfileView(APIView):
+class CompleteProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = UserProfileSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        result = complete_profile(user=request.user, data=serializer.validated_data)
+        result = UserService.complete_profile(user=request.user, data=serializer.validated_data)
         return Response(UserSerializer(result['user']).data, status=status.HTTP_201_CREATED)
 
 
@@ -37,9 +37,11 @@ class LoginView(APIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        result = login(**serializer.validated_data)
+        result = UserService.login(**serializer.validated_data)
         return Response({
             'access': result['access'],
             'refresh': result['refresh'],
             'user': UserSerializer(result['user']).data,
         })
+
+
