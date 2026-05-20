@@ -189,7 +189,6 @@ UNFOLD = {
                     {"title": "Phases", "icon": "layers", "link": reverse_lazy("admin:journey_phase_changelist")},
                     {"title": "Journey Steps", "icon": "format_list_numbered", "link": reverse_lazy("admin:journey_journeystep_changelist")},
                     {"title": "Journeys", "icon": "route", "link": reverse_lazy("admin:journey_journey_changelist")},
-                    {"title": "Step Progress", "icon": "track_changes", "link": reverse_lazy("admin:journey_journeystepprogress_changelist")},
                 ],
             },
             {
