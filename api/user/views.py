@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import AvatarItem, UserAvatarItem
-from .serializers import AvatarItemSerializer, LoginSerializer, RegisterSerializer, UserProfileSerializer, UserSerializer
+from .serializers import AvatarItemSerializer, LoginSerializer, PatchAvatarSerializer, RegisterSerializer, UserProfileSerializer, UserSerializer
 from .services import AvatarService, UserService
 
 
@@ -53,6 +53,12 @@ class ProfileView(APIView):
     def get(self, request):
         return Response(UserSerializer(request.user).data)
 
+    def patch(self, request):
+        serializer = PatchAvatarSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        AvatarService.update_avatar_url(user=request.user, avatar_url=serializer.validated_data['avatar_url'])
+        return Response(UserSerializer(request.user).data)
+
 
 class AvatarItemListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -65,6 +71,14 @@ class AvatarItemListView(APIView):
             is_equipped=Exists(equipped),
         )
         return Response(AvatarItemSerializer(items, many=True).data)
+
+
+class AvatarItemUnlockView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, item_id):
+        AvatarService.unlock_item(user=request.user, item_id=item_id)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class AvatarItemEquipView(APIView):
