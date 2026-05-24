@@ -1,8 +1,10 @@
+from urllib.parse import urlencode
+
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
 from rest_framework_simplejwt.tokens import RefreshToken
-from .exceptions import EmailAlreadyExists, InvalidCredentials
-from .models import User, Userprofile
+from .exceptions import AvatarItemNotOwned, EmailAlreadyExists, InvalidCredentials
+from .models import AvatarItem, User, UserAvatarItem, Userprofile
 
 
 class UserService:
@@ -46,3 +48,44 @@ class UserService:
         return {
             'user': user,
         }
+
+
+class AvatarService:
+    DICEBEAR_BASE_URL = "https://api.dicebear.com/9.x/avataaars/svg"
+
+    @staticmethod
+    def build_avatar_url(user):
+        params = dict(
+            UserAvatarItem.objects.filter(user=user, is_equipped=True)
+            .values_list('item__param_key', 'item__param_value')
+        )
+
+        if params:
+            url = f"{AvatarService.DICEBEAR_BASE_URL}?{urlencode(params)}"
+        else:
+            url = AvatarService.DICEBEAR_BASE_URL
+
+        Userprofile.objects.filter(user=user).update(avatar_url=url)
+        return url
+
+    @staticmethod
+    def equip_item(*, user, item_id):
+        try:
+            user_item = UserAvatarItem.objects.select_related('item').get(user=user, item_id=item_id)
+        except UserAvatarItem.DoesNotExist:
+            raise AvatarItemNotOwned()
+
+        UserAvatarItem.objects.filter(
+            user=user,
+            item__param_key=user_item.item.param_key,
+            is_equipped=True,
+        ).update(is_equipped=False)
+
+        user_item.is_equipped = True
+        user_item.save(update_fields=['is_equipped'])
+        AvatarService.build_avatar_url(user)
+
+    @staticmethod
+    def unequip_item(*, user, item_id):
+        UserAvatarItem.objects.filter(user=user, item_id=item_id).update(is_equipped=False)
+        AvatarService.build_avatar_url(user)

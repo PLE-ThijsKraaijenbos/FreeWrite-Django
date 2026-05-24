@@ -37,6 +37,32 @@ class User(AbstractBaseUser, PermissionsMixin):
         db_table = 'user'
 
 
+class AvatarItem(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100)
+    param_key = models.CharField(max_length=50)
+    param_value = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.param_key}={self.param_value}"
+
+    class Meta:
+        db_table = 'avatar_item'
+        unique_together = [('param_key', 'param_value')]
+
+
+class UserAvatarItem(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='avatar_items')
+    item = models.ForeignKey(AvatarItem, on_delete=models.CASCADE, related_name='user_items')
+    is_equipped = models.BooleanField(default=False)
+    unlocked_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'user_avatar_item'
+        unique_together = [('user', 'item')]
+
+
 class Userprofile(models.Model):
     class Substance(models.TextChoices):
         COCAINE = "COCAINE", "Cocaine"
