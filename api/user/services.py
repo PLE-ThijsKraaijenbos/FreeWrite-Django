@@ -1,5 +1,3 @@
-from urllib.parse import urlencode
-
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -51,22 +49,9 @@ class UserService:
 
 
 class AvatarService:
-    DICEBEAR_BASE_URL = "https://api.dicebear.com/9.x/avataaars/svg"
-
     @staticmethod
-    def build_avatar_url(user):
-        params = dict(
-            UserAvatarItem.objects.filter(user=user, is_equipped=True)
-            .values_list('item__param_key', 'item__param_value')
-        )
-
-        if params:
-            url = f"{AvatarService.DICEBEAR_BASE_URL}?{urlencode(params)}"
-        else:
-            url = AvatarService.DICEBEAR_BASE_URL
-
-        Userprofile.objects.filter(user=user).update(avatar_url=url)
-        return url
+    def update_avatar_url(*, user, avatar_url: str) -> None:
+        Userprofile.objects.filter(user=user).update(avatar_url=avatar_url)
 
     @staticmethod
     def equip_item(*, user, item_id):
@@ -83,12 +68,10 @@ class AvatarService:
 
         user_item.is_equipped = True
         user_item.save(update_fields=['is_equipped'])
-        AvatarService.build_avatar_url(user)
 
     @staticmethod
     def unequip_item(*, user, item_id):
         UserAvatarItem.objects.filter(user=user, item_id=item_id).update(is_equipped=False)
-        AvatarService.build_avatar_url(user)
 
     @staticmethod
     def unlock_item(*, user, item_id):
