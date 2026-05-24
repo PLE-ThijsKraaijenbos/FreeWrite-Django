@@ -1,5 +1,6 @@
+from django.db.models import Exists, OuterRef
 from rest_framework import serializers
-from .models import User, Userprofile
+from .models import AvatarItem, User, UserAvatarItem, Userprofile
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -21,6 +22,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'frequency',
             'previous_attempts',
         ]
+
+
+class AvatarItemSerializer(serializers.ModelSerializer):
+    is_unlocked = serializers.BooleanField(read_only=True)
+    is_equipped = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = AvatarItem
+        fields = ['id', 'name', 'param_key', 'param_value', 'is_unlocked', 'is_equipped']
 
 
 class UserSerializer(serializers.ModelSerializer):

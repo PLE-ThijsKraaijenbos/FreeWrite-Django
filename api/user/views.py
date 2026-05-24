@@ -1,10 +1,12 @@
+from django.db.models import Exists, OuterRef
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
-from .serializers import LoginSerializer, RegisterSerializer, UserProfileSerializer, UserSerializer
-from .services import UserService
+from .models import AvatarItem, UserAvatarItem
+from .serializers import AvatarItemSerializer, LoginSerializer, RegisterSerializer, UserProfileSerializer, UserSerializer
+from .services import AvatarService, UserService
 
 
 class RegisterView(APIView):
@@ -43,5 +45,30 @@ class LoginView(APIView):
             'refresh': result['refresh'],
             'user': UserSerializer(result['user']).data,
         })
+
+
+class AvatarItemListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        unlocked = UserAvatarItem.objects.filter(user=request.user, item=OuterRef('pk'))
+        equipped = UserAvatarItem.objects.filter(user=request.user, item=OuterRef('pk'), is_equipped=True)
+        items = AvatarItem.objects.annotate(
+            is_unlocked=Exists(unlocked),
+            is_equipped=Exists(equipped),
+        )
+        return Response(AvatarItemSerializer(items, many=True).data)
+
+
+class AvatarItemEquipView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, item_id):
+        AvatarService.equip_item(user=request.user, item_id=item_id)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def delete(self, request, item_id):
+        AvatarService.unequip_item(user=request.user, item_id=item_id)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 

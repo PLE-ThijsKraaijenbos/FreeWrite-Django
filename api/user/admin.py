@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from unfold.admin import ModelAdmin
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
-from .models import User, Userprofile
+from .models import AvatarItem, User, UserAvatarItem, Userprofile
 
 
 @admin.register(User)
@@ -33,3 +33,18 @@ class UserprofileAdmin(ModelAdmin):
     list_display = ['user', 'name', 'substance', 'goal']
     search_fields = ['user__email', 'name']
     autocomplete_fields = ['user']
+
+
+@admin.register(AvatarItem)
+class AvatarItemAdmin(ModelAdmin):
+    list_display = ['name', 'param_key', 'param_value']
+    search_fields = ['name', 'param_key', 'param_value']
+    list_filter = ['param_key']
+
+
+@admin.register(UserAvatarItem)
+class UserAvatarItemAdmin(ModelAdmin):
+    list_display = ['user', 'item', 'is_equipped', 'unlocked_at']
+    list_filter = ['is_equipped']
+    autocomplete_fields = ['user', 'item']
+    search_fields = ['user__email', 'item__name']

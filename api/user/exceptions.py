@@ -10,3 +10,8 @@ class EmailAlreadyExists(APIException):
 class InvalidCredentials(APIException):
     status_code = status.HTTP_401_UNAUTHORIZED
     default_detail = "Invalid email or password."
+
+
+class AvatarItemNotOwned(APIException):
+    status_code = status.HTTP_403_FORBIDDEN
+    default_detail = "You do not own this avatar item."
