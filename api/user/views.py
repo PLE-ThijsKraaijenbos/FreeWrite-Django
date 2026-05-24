@@ -47,6 +47,13 @@ class LoginView(APIView):
         })
 
 
+class ProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response(UserSerializer(request.user).data)
+
+
 class AvatarItemListView(APIView):
     permission_classes = [IsAuthenticated]
 
