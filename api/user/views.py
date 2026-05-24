@@ -67,6 +67,14 @@ class AvatarItemListView(APIView):
         return Response(AvatarItemSerializer(items, many=True).data)
 
 
+class AvatarItemUnlockView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, item_id):
+        AvatarService.unlock_item(user=request.user, item_id=item_id)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class AvatarItemEquipView(APIView):
     permission_classes = [IsAuthenticated]
 

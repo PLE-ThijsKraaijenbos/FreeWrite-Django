@@ -89,3 +89,8 @@ class AvatarService:
     def unequip_item(*, user, item_id):
         UserAvatarItem.objects.filter(user=user, item_id=item_id).update(is_equipped=False)
         AvatarService.build_avatar_url(user)
+
+    @staticmethod
+    def unlock_item(*, user, item_id):
+        item = AvatarItem.objects.get(pk=item_id)
+        UserAvatarItem.objects.get_or_create(user=user, item=item)
