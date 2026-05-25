@@ -4,4 +4,5 @@ from . import views
 urlpatterns = [
     path('health/', views.health),
     path('user/', include('user.urls')),
+    path('journey/', include('journey.urls')),
 ]

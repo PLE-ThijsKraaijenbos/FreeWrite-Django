@@ -39,17 +39,29 @@ class JourneyService:
 
         steps = JourneyStep.objects.filter(is_active=True).select_related('phase').order_by('phase__order', 'order')
 
-        to_create = []
+        steps_to_add = []
         for step in steps:
             if step.id in existing_step_ids:
                 continue
-
             if step.is_core or JourneyService._evaluate_activation_rules(step.activation_rules, profile):
-                to_create.append(JourneyStepProgress(
-                    journey=journey,
-                    step=step,
-                    status=JourneyStepProgress.Status.AVAILABLE,
-                ))
+                steps_to_add.append(step)
+
+        if not steps_to_add:
+            return journey
+
+        has_active = JourneyStepProgress.objects.filter(
+            journey=journey,
+            status__in=[JourneyStepProgress.Status.AVAILABLE, JourneyStepProgress.Status.IN_PROGRESS],
+        ).exists()
+
+        to_create = []
+        for i, step in enumerate(steps_to_add):
+            status = (
+                JourneyStepProgress.Status.AVAILABLE
+                if i == 0 and not has_active
+                else JourneyStepProgress.Status.UNAVAILABLE
+            )
+            to_create.append(JourneyStepProgress(journey=journey, step=step, status=status))
 
         JourneyStepProgress.objects.bulk_create(to_create)
 
