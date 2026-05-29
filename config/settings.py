@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "user",
     "journey",
+    "community",
 ]
 
 AUTH_USER_MODEL = "user.User"
@@ -202,6 +203,12 @@ UNFOLD = {
                     {"title": "Scale", "icon": "balance", "link": reverse_lazy("admin:journey_scalecontent_changelist")},
                 ],
             },
+            {
+                "title": "Community",
+                "items": [
+                    {"title": "Posts", "icon": "forum", "link": reverse_lazy("admin:community_post_changelist")},
+                ],
+            }
         ],
     },
 }
