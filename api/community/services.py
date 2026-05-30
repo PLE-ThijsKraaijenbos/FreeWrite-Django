@@ -30,6 +30,12 @@ class PostService:
         return post
 
     @staticmethod
+    def delete_post(*, post: Post, user) -> None:
+        if post.author != user:
+            raise PermissionDenied()
+        post.delete()
+
+    @staticmethod
     def like_post(*, user, post: Post) -> None:
         PostLike.objects.get_or_create(user=user, post=post)
 
