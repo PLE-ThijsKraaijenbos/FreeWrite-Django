@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Post
-from .serializers import PostCreateSerializer, PostSerializer
+from .serializers import PostCreateSerializer, PostSerializer, PostUpdateSerializer
 from .services import PostService
 
 
@@ -19,6 +19,16 @@ class PostListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+
+class PostDetailView(APIView):
+    def patch(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        serializer = PostUpdateSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        image = serializer.validated_data.pop('image', None)
+        updated_post = PostService.update_post(post=post, user=request.user, image=image, **serializer.validated_data)
+        return Response(PostSerializer(updated_post, context={'request': request}).data)
 
 
 class PostLikeView(APIView):

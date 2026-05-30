@@ -6,6 +6,7 @@ from .models import Post
 class PostSerializer(serializers.ModelSerializer):
     likes_count = serializers.SerializerMethodField()
     is_liked_by_user = serializers.SerializerMethodField()
+    is_own_post = serializers.SerializerMethodField()
     author_name = serializers.SerializerMethodField()
 
     def get_likes_count(self, obj):
@@ -17,6 +18,12 @@ class PostSerializer(serializers.ModelSerializer):
             return obj.likes.filter(user=request.user).exists()
         return False
 
+    def get_is_own_post(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.author_id == request.user.id
+        return False
+
     def get_author_name(self, obj):
         if obj.author and hasattr(obj.author, 'profile'):
             return obj.author.profile.name
@@ -24,7 +31,11 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ['id', 'title', 'body', 'image_url', 'likes_count', 'is_liked_by_user', 'author_name', 'created_at']
+        fields = [
+            'id', 'title', 'body', 'image_url',
+            'likes_count', 'is_liked_by_user', 'is_own_post',
+            'author_name', 'created_at',
+        ]
 
 
 class PostCreateSerializer(serializers.ModelSerializer):
@@ -39,3 +50,11 @@ class PostCreateSerializer(serializers.ModelSerializer):
         model = Post
         fields = ['id', 'title', 'body', 'image']
         read_only_fields = ['id']
+
+
+class PostUpdateSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(required=False, write_only=True, allow_null=True)
+
+    class Meta:
+        model = Post
+        fields = ['title', 'body', 'image']
