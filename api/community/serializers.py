@@ -24,11 +24,18 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ['id', 'title', 'body', 'likes_count', 'is_liked_by_user', 'author_name', 'created_at']
+        fields = ['id', 'title', 'body', 'image_url', 'likes_count', 'is_liked_by_user', 'author_name', 'created_at']
 
 
 class PostCreateSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(required=False, write_only=True, allow_null=True)
+
+    def create(self, validated_data):
+        from .services import PostService
+        image = validated_data.pop('image', None)
+        return PostService.create_post(image=image, **validated_data)
+
     class Meta:
         model = Post
-        fields = ['id', 'title', 'body']
+        fields = ['id', 'title', 'body', 'image']
         read_only_fields = ['id']

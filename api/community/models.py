@@ -14,6 +14,7 @@ class Post(models.Model):
     )
     title = models.TextField()
     body = models.TextField()
+    image_url = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
