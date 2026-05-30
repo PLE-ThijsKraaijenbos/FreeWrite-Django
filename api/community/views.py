@@ -4,15 +4,21 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Post
-from .serializers import PostSerializer
+from .serializers import PostCreateSerializer, PostSerializer
 from .services import PostService
 
 
-class PostListView(generics.ListAPIView):
-    serializer_class = PostSerializer
-
+class PostListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         return PostService.get_post_list()
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return PostCreateSerializer
+        return PostSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
 
 
 class PostLikeView(APIView):
