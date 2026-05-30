@@ -1,3 +1,5 @@
+import cloudinary.uploader
+
 from .models import Post, PostLike
 
 
@@ -7,8 +9,12 @@ class PostService:
         return Post.objects.order_by('-created_at')
 
     @staticmethod
-    def create_post(*, author, title, body) -> Post:
-        return Post.objects.create(author=author, title=title, body=body)
+    def create_post(*, author, title, body, image=None) -> Post:
+        image_url = None
+        if image:
+            result = cloudinary.uploader.upload(image, folder='community/posts', resource_type='image')
+            image_url = result['secure_url']
+        return Post.objects.create(author=author, title=title, body=body, image_url=image_url)
 
     @staticmethod
     def like_post(*, user, post: Post) -> None:
