@@ -30,6 +30,11 @@ class PostDetailView(APIView):
         updated_post = PostService.update_post(post=post, user=request.user, image=image, **serializer.validated_data)
         return Response(PostSerializer(updated_post, context={'request': request}).data)
 
+    def delete(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        PostService.delete_post(post=post, user=request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class PostLikeView(APIView):
     def post(self, request, post_id):
