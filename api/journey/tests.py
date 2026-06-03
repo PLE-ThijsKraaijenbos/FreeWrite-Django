@@ -1,6 +1,7 @@
 from django.test import TestCase
 
-from journey.models import JourneyStepProgress, Phase, JourneyStep
+from journey.exceptions import StepAlreadyCompleted, StepNotAvailable
+from journey.models import Journey, JourneyStep, JourneyStepProgress, Phase
 from journey.services import JourneyService
 from user.models import User, Userprofile
 
@@ -126,3 +127,127 @@ class SyncJourneyWithProfileTests(JourneyTestBase):
         self.make_step(phase=self.phase, is_core=False, activation_rules=rules)
         journey = JourneyService.sync_with_profile(user=self.user)
         self.assertEqual(JourneyStepProgress.objects.filter(journey=journey).count(), 0)
+
+
+class StartProgressTests(JourneyTestBase):
+    def setUp(self):
+        self.user = self.make_user()
+        self.profile = self.make_profile(self.user)
+        phase = self.make_phase()
+        step = self.make_step(phase=phase, is_core=True)
+        JourneyService.sync_with_profile(user=self.user)
+        self.progress = JourneyStepProgress.objects.get(journey__user=self.user, step=step)
+
+    def test_transitions_to_in_progress(self):
+        JourneyService.start_progress(self.user, self.progress.id)
+        self.progress.refresh_from_db()
+        self.assertEqual(self.progress.status, JourneyStepProgress.Status.IN_PROGRESS)
+
+    def test_sets_started_at(self):
+        self.assertIsNone(self.progress.started_at)
+        JourneyService.start_progress(self.user, self.progress.id)
+        self.progress.refresh_from_db()
+        self.assertIsNotNone(self.progress.started_at)
+
+    def test_returns_updated_progress(self):
+        result = JourneyService.start_progress(self.user, self.progress.id)
+        self.assertEqual(result.id, self.progress.id)
+        self.assertEqual(result.status, JourneyStepProgress.Status.IN_PROGRESS)
+
+    def test_raises_if_already_in_progress(self):
+        JourneyService.start_progress(self.user, self.progress.id)
+        with self.assertRaises(StepNotAvailable):
+            JourneyService.start_progress(self.user, self.progress.id)
+
+    def test_raises_if_unavailable(self):
+        self.progress.status = JourneyStepProgress.Status.UNAVAILABLE
+        self.progress.save()
+        with self.assertRaises(StepNotAvailable):
+            JourneyService.start_progress(self.user, self.progress.id)
+
+    def test_raises_if_completed(self):
+        self.progress.status = JourneyStepProgress.Status.COMPLETED
+        self.progress.save()
+        with self.assertRaises(StepNotAvailable):
+            JourneyService.start_progress(self.user, self.progress.id)
+
+    def test_raises_if_progress_belongs_to_other_user(self):
+        other_user = self.make_user(email='other@example.com')
+        self.make_profile(other_user)
+        with self.assertRaises(JourneyStepProgress.DoesNotExist):
+            JourneyService.start_progress(other_user, self.progress.id)
+
+
+class CompleteProgressTests(JourneyTestBase):
+    def setUp(self):
+        self.user = self.make_user()
+        self.profile = self.make_profile(self.user)
+        self.phase = self.make_phase()
+        self.step = self.make_step(phase=self.phase, order=1, is_core=True)
+        JourneyService.sync_with_profile(user=self.user)
+        self.progress = JourneyStepProgress.objects.get(journey__user=self.user, step=self.step)
+
+    def test_transitions_to_completed(self):
+        JourneyService.complete_progress(self.user, self.progress.id, response_data=None)
+        self.progress.refresh_from_db()
+        self.assertEqual(self.progress.status, JourneyStepProgress.Status.COMPLETED)
+
+    def test_sets_completed_at(self):
+        self.assertIsNone(self.progress.completed_at)
+        JourneyService.complete_progress(self.user, self.progress.id, response_data=None)
+        self.progress.refresh_from_db()
+        self.assertIsNotNone(self.progress.completed_at)
+
+    def test_stores_response_data(self):
+        response_data = {'rating': 4, 'notes': 'good'}
+        JourneyService.complete_progress(self.user, self.progress.id, response_data=response_data)
+        self.progress.refresh_from_db()
+        self.assertEqual(self.progress.response_data, response_data)
+
+    def test_awards_coins(self):
+        initial_coins = self.profile.coins
+        JourneyService.complete_progress(self.user, self.progress.id, response_data=None)
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.coins, initial_coins + JourneyService.COIN_REWARD_AMOUNT)
+
+    def test_activates_next_unavailable_step(self):
+        step2 = self.make_step(phase=self.phase, order=2, is_core=True)
+        JourneyService.sync_with_profile(user=self.user)
+        step2_progress = JourneyStepProgress.objects.get(journey__user=self.user, step=step2)
+        self.assertEqual(step2_progress.status, JourneyStepProgress.Status.UNAVAILABLE)
+
+        JourneyService.complete_progress(self.user, self.progress.id, response_data=None)
+
+        step2_progress.refresh_from_db()
+        self.assertEqual(step2_progress.status, JourneyStepProgress.Status.AVAILABLE)
+
+    def test_returns_journey(self):
+        result = JourneyService.complete_progress(self.user, self.progress.id, response_data=None)
+        self.assertIsInstance(result, Journey)
+
+    def test_raises_if_already_completed(self):
+        self.progress.status = JourneyStepProgress.Status.COMPLETED
+        self.progress.save()
+        with self.assertRaises(StepAlreadyCompleted):
+            JourneyService.complete_progress(self.user, self.progress.id, response_data=None)
+
+    def test_raises_if_unavailable(self):
+        self.progress.status = JourneyStepProgress.Status.UNAVAILABLE
+        self.progress.save()
+        with self.assertRaises(StepNotAvailable):
+            JourneyService.complete_progress(self.user, self.progress.id, response_data=None)
+
+    def test_raises_if_progress_belongs_to_other_user(self):
+        other_user = self.make_user(email='other@example.com')
+        self.make_profile(other_user)
+        with self.assertRaises(JourneyStepProgress.DoesNotExist):
+            JourneyService.complete_progress(other_user, self.progress.id, response_data=None)
+
+    def test_does_not_award_coins_on_failure(self):
+        self.progress.status = JourneyStepProgress.Status.COMPLETED
+        self.progress.save()
+        initial_coins = self.profile.coins
+        with self.assertRaises(StepAlreadyCompleted):
+            JourneyService.complete_progress(self.user, self.progress.id, response_data=None)
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.coins, initial_coins)
