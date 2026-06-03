@@ -42,6 +42,7 @@ class AvatarItem(models.Model):
     name = models.CharField(max_length=100)
     param_key = models.CharField(max_length=50)
     param_value = models.CharField(max_length=100)
+    price = models.IntegerField(default=0)
 
     def __str__(self):
         return f"{self.param_key}={self.param_value}"
@@ -110,6 +111,7 @@ class Userprofile(models.Model):
     usage_times = models.CharField(max_length=20, choices=Times.choices, blank=True)
     frequency = models.CharField(max_length=20, choices=Frequency.choices, blank=True)
     previous_attempts = models.CharField(max_length=20, choices=PreviousAttempts.choices, blank=True)
+    coins = models.IntegerField(default=100)
 
     class Meta:
         db_table = 'userprofile'
