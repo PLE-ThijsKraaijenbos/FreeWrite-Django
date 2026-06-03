@@ -1,7 +1,9 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
+from django.db import transaction
+from django.db.models import F
 from rest_framework_simplejwt.tokens import RefreshToken
-from .exceptions import AvatarItemNotOwned, EmailAlreadyExists, InvalidCredentials
+from .exceptions import AvatarItemNotOwned, EmailAlreadyExists, InsufficientCoins, InvalidCredentials
 from .models import AvatarItem, User, UserAvatarItem, Userprofile
 
 
@@ -74,6 +76,18 @@ class AvatarService:
         UserAvatarItem.objects.filter(user=user, item_id=item_id).update(is_equipped=False)
 
     @staticmethod
+    @transaction.atomic
     def unlock_item(*, user, item_id):
         item = AvatarItem.objects.get(pk=item_id)
-        UserAvatarItem.objects.get_or_create(user=user, item=item)
+
+        if UserAvatarItem.objects.filter(user=user, item=item).exists():
+            return
+
+        if item.price > 0:
+            deducted = Userprofile.objects.filter(user=user, coins__gte=item.price).update(
+                coins=F('coins') - item.price
+            )
+            if not deducted:
+                raise InsufficientCoins()
+
+        UserAvatarItem.objects.create(user=user, item=item)
