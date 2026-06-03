@@ -208,7 +208,7 @@ class CompleteProgressTests(JourneyTestBase):
         initial_coins = self.profile.coins
         JourneyService.complete_progress(self.user, self.progress.id, response_data=None)
         self.profile.refresh_from_db()
-        self.assertEqual(self.profile.coins, initial_coins + JourneyService.COIN_REWARD_AMOUNT)
+        self.assertEqual(self.profile.coins, initial_coins + 50)
 
     def test_activates_next_unavailable_step(self):
         step2 = self.make_step(phase=self.phase, order=2, is_core=True)
