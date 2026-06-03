@@ -15,3 +15,9 @@ class InvalidCredentials(APIException):
 class AvatarItemNotOwned(APIException):
     status_code = status.HTTP_403_FORBIDDEN
     default_detail = "You do not own this avatar item."
+
+
+class InsufficientCoins(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "Not enough coins to purchase this item."
+    default_code = "insufficient_coins"

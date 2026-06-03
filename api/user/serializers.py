@@ -31,7 +31,7 @@ class AvatarItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AvatarItem
-        fields = ['id', 'name', 'param_key', 'param_value', 'is_unlocked', 'is_equipped']
+        fields = ['id', 'name', 'param_key', 'param_value', 'price', 'is_unlocked', 'is_equipped']
 
 
 class UserSerializer(serializers.ModelSerializer):
