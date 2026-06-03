@@ -21,6 +21,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'usage_times',
             'frequency',
             'previous_attempts',
+            'coins',
         ]
 
 
