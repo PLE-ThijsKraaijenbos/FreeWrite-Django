@@ -149,3 +149,15 @@ class JourneyService:
         JourneyStepProgress.objects.bulk_create(to_create)
 
         return journey
+
+    @staticmethod
+    @transaction.atomic
+    def bookmark_step(user, progress_id):
+        progress = (
+            JourneyStepProgress.objects
+            .select_for_update()
+            .get(id=progress_id, journey__user=user)
+        )
+        progress.bookmarked = not progress.bookmarked
+        progress.save(update_fields=['bookmarked'])
+        return progress
