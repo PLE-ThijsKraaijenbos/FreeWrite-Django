@@ -43,3 +43,14 @@ class JourneyStepProgressCompleteView(APIView):
         except JourneyStepProgress.DoesNotExist:
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
         return Response(JourneySerializer(journey).data)
+
+
+class JourneyBookmarkView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, progress_id):
+        try:
+            progress = JourneyService.bookmark_step(request.user, progress_id)
+        except JourneyStepProgress.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(JourneyStepProgressSerializer(progress).data)
