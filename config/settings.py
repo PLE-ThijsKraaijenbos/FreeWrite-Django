@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+import dj_database_url
 from decouple import config, Csv
 from django.urls import reverse_lazy
 from pathlib import Path
@@ -62,14 +63,11 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": config("DB_NAME"),
-        "USER": config("DB_USER"),
-        "PASSWORD": config("DB_PASSWORD"),
-        "HOST": config("DB_HOST", default="db"),
-        "PORT": config("DB_PORT", default="5432"),
-    }
+    "default": dj_database_url.config(
+        default=config("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=not DEBUG,
+    )
 }
 
 AUTH_PASSWORD_VALIDATORS = [
