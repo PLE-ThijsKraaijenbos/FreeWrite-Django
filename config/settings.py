@@ -11,6 +11,11 @@ SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost", cast=Csv())
 
+# Automatically trust Railway-injected hostname
+_railway_domain = config("RAILWAY_PUBLIC_DOMAIN", default="")
+if _railway_domain and _railway_domain not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS = list(ALLOWED_HOSTS) + [_railway_domain]
+
 INSTALLED_APPS = [
     "unfold",
     "unfold.contrib.filters",
@@ -66,7 +71,6 @@ DATABASES = {
     "default": dj_database_url.config(
         default=config("DATABASE_URL"),
         conn_max_age=600,
-        ssl_require=not DEBUG,
     )
 }
 
@@ -138,9 +142,8 @@ LOGGING = {
     },
     'handlers': {
         'console': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.StreamHandler',
-            'filters': ['require_debug_true'],
             'formatter': 'simple',
         },
         'log_file': {
