@@ -138,9 +138,8 @@ LOGGING = {
     },
     'handlers': {
         'console': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.StreamHandler',
-            'filters': ['require_debug_true'],
             'formatter': 'simple',
         },
         'log_file': {
