@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from decouple import config, Csv
 from django.urls import reverse_lazy
 from pathlib import Path
@@ -22,6 +24,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "user",
     "journey",
+    "community",
 ]
 
 AUTH_USER_MODEL = "user.User"
@@ -88,16 +91,30 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
+        "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
 }
 
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
 CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default="http://localhost:3000", cast=Csv())
+
+import cloudinary
+cloudinary.config(
+    cloud_name=config("CLOUDINARY_CLOUD_NAME", default=""),
+    api_key=config("CLOUDINARY_API_KEY", default=""),
+    api_secret=config("CLOUDINARY_API_SECRET", default=""),
+    secure=True,
+)
 
 LOGGING = {
     'version': 1,
@@ -181,7 +198,6 @@ UNFOLD = {
                     {"title": "Phases", "icon": "layers", "link": reverse_lazy("admin:journey_phase_changelist")},
                     {"title": "Journey Steps", "icon": "format_list_numbered", "link": reverse_lazy("admin:journey_journeystep_changelist")},
                     {"title": "Journeys", "icon": "route", "link": reverse_lazy("admin:journey_journey_changelist")},
-                    {"title": "Step Progress", "icon": "track_changes", "link": reverse_lazy("admin:journey_journeystepprogress_changelist")},
                 ],
             },
             {
@@ -195,6 +211,12 @@ UNFOLD = {
                     {"title": "Scale", "icon": "balance", "link": reverse_lazy("admin:journey_scalecontent_changelist")},
                 ],
             },
+            {
+                "title": "Community",
+                "items": [
+                    {"title": "Posts", "icon": "forum", "link": reverse_lazy("admin:community_post_changelist")},
+                ],
+            }
         ],
     },
 }

@@ -1,6 +1,9 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
 
 urlpatterns = [
-    path("health/", views.health),
+    path('health/', views.health),
+    path('user/', include('user.urls')),
+    path('journey/', include('journey.urls')),
+    path('community/', include('community.urls')),
 ]

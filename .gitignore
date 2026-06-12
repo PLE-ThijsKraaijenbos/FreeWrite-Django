@@ -12,3 +12,6 @@ venv/
 .idea/
 *.iml
 .DS_Store
+.claude
+api.log
+api_error.log
