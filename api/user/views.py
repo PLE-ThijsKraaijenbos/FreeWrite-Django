@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import AvatarItem, UserAvatarItem
-from .serializers import AvatarItemSerializer, LoginSerializer, RegisterSerializer, UserProfileSerializer, UserSerializer
+from .serializers import AvatarItemSerializer, LoginSerializer, ProfileUpdateSerializer, RegisterSerializer, UserProfileSerializer, UserSerializer
 from .services import AvatarService, UserService
 
 
@@ -56,6 +56,12 @@ class ProfileView(APIView):
 
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+
+    def patch(self, request):
+        serializer = ProfileUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = UserService.update_profile(user=request.user, **serializer.validated_data)
+        return Response(UserSerializer(user).data)
 
 
 class AvatarItemListView(APIView):

@@ -43,6 +43,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return params
 
 
+class ProfileUpdateSerializer(serializers.Serializer):
+    # Partial profile update. Mirrors the onboarding name rule (non-empty after trim).
+    name = serializers.CharField(min_length=1)
+
+
 class AvatarItemSerializer(serializers.ModelSerializer):
     is_unlocked = serializers.BooleanField(read_only=True)
     is_equipped = serializers.BooleanField(read_only=True)

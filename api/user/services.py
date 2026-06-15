@@ -61,6 +61,13 @@ class UserService:
             'user': user,
         }
 
+    @staticmethod
+    def update_profile(*, user, name):
+        profile = user.profile
+        profile.name = name
+        profile.save(update_fields=['name'])
+        return user
+
 
 class AvatarService:
     @staticmethod
