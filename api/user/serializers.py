@@ -12,12 +12,17 @@ class RegisterSerializer(serializers.Serializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    # The avatar is derived from the user's equipped items (single source of
+    # truth) rather than stored — a {param_key: param_value} map the client
+    # turns into a DiceBear URL. Read-only; ignored on complete-profile input.
+    avatar = serializers.SerializerMethodField()
+
     class Meta:
         model = Userprofile
         fields = [
             'id',
             'name',
-            'avatar_url',
+            'avatar',
             'substance',
             'usage_duration',
             'goal',
@@ -26,6 +31,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'previous_attempts',
             'coins',
         ]
+
+    def get_avatar(self, obj):
+        equipped = obj.user.avatar_items.filter(is_equipped=True).select_related('item')
+        params = {ua.item.param_key: ua.item.param_value for ua in equipped}
+        # Probability gates aren't items — derive them from the equipped parents.
+        if 'accessories' in params:
+            params['accessoriesProbability'] = '100'
+        if 'facialHair' in params:
+            params['facialHairProbability'] = '100'
+        return params
 
 
 class AvatarItemSerializer(serializers.ModelSerializer):
@@ -53,5 +68,3 @@ class LoginSerializer(serializers.Serializer):
         return value.lower()
 
 
-class PatchAvatarSerializer(serializers.Serializer):
-    avatar_url = serializers.URLField()

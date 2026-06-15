@@ -1,5 +1,3 @@
-from urllib.parse import parse_qsl, urlparse
-
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
 from django.db import transaction
@@ -7,6 +5,17 @@ from django.db.models import F
 from rest_framework_simplejwt.tokens import RefreshToken
 from .exceptions import AvatarItemNotOwned, EmailAlreadyExists, InsufficientCoins, InvalidCredentials
 from .models import AvatarItem, User, UserAvatarItem, Userprofile
+
+# `top` values that are head coverings rather than hair (mirror of the frontend
+# HAT_TOPS in src/lib/avatar.ts) — DiceBear lumps hats and hair under `top`.
+HAT_TOPS = {'hat', 'hijab', 'turban', 'winterHat1', 'winterHat02', 'winterHat03', 'winterHat04'}
+
+# Default dependent-param values, granted free the first time their parent item is
+# unlocked. Mirror of the DEPENDENT_RULES defaults in src/lib/avatar.ts.
+DEFAULT_ACCESSORIES_COLOR = '262e33'
+DEFAULT_CLOTHING_GRAPHIC = 'skullOutline'
+DEFAULT_HAT_COLOR = '262e33'
+DEFAULT_HAIR_COLOR = '4a312c'
 
 
 class UserService:
@@ -42,10 +51,10 @@ class UserService:
         }
 
     @staticmethod
-    def complete_profile(*, user, data):
+    def complete_profile(*, user, data, avatar):
         from journey.services import JourneyService
         Userprofile.objects.create(user=user, **data)
-        AvatarService.grant_default_items(user=user, avatar_url=data.get('avatar_url', ''))
+        AvatarService.grant_default_items(user=user, avatar=avatar)
         JourneyService.sync_with_profile(user=user)
 
         return {
@@ -55,30 +64,31 @@ class UserService:
 
 class AvatarService:
     @staticmethod
-    def update_avatar_url(*, user, avatar_url: str) -> None:
-        Userprofile.objects.filter(user=user).update(avatar_url=avatar_url)
-
-    @staticmethod
-    def _parse_avatar_params(avatar_url: str) -> dict:
-        query = urlparse(avatar_url or '').query
-        return {k.replace('[]', ''): v for k, v in parse_qsl(query)}
+    def _grant(*, user, item, equip):
+        """Own `item` (idempotent); when `equip`, make it the equipped one of its key."""
+        user_item, _ = UserAvatarItem.objects.get_or_create(user=user, item=item)
+        if equip and not user_item.is_equipped:
+            UserAvatarItem.objects.filter(
+                user=user, item__param_key=item.param_key, is_equipped=True
+            ).exclude(pk=user_item.pk).update(is_equipped=False)
+            user_item.is_equipped = True
+            user_item.save(update_fields=['is_equipped'])
+        return user_item
 
     @staticmethod
     @transaction.atomic
-    def grant_default_items(*, user, avatar_url: str) -> None:
+    def grant_default_items(*, user, avatar: dict) -> None:
+        """Equip the items described by the chosen onboarding avatar params.
+
+        `avatar` is a {param_key: param_value} map; matching AvatarItems are
+        unlocked + equipped for free. Derived `*Probability` keys are skipped.
         """
-        auto unlock default items after onboarding.
-        items are parsed from the avatar_url that's provided by the frontend.
-        """
-        params = AvatarService._parse_avatar_params(avatar_url)
-        for param_key, param_value in params.items():
-            item = AvatarItem.objects.filter(param_key=param_key, param_value=param_value).first()
-            if item is None:
+        for param_key, param_value in (avatar or {}).items():
+            if param_key.endswith('Probability'):
                 continue
-            user_item, _ = UserAvatarItem.objects.get_or_create(user=user, item=item)
-            if not user_item.is_equipped:
-                user_item.is_equipped = True
-                user_item.save(update_fields=['is_equipped'])
+            item = AvatarItem.objects.filter(param_key=param_key, param_value=param_value).first()
+            if item is not None:
+                AvatarService._grant(user=user, item=item, equip=True)
 
     @staticmethod
     def equip_item(*, user, item_id):
@@ -116,3 +126,39 @@ class AvatarService:
                 raise InsufficientCoins()
 
         UserAvatarItem.objects.create(user=user, item=item)
+        AvatarService._grant_dependent(user=user, item=item)
+
+    @staticmethod
+    def _current_hair_color(user) -> str:
+        ua = UserAvatarItem.objects.select_related('item').filter(
+            user=user, item__param_key='hairColor', is_equipped=True
+        ).first()
+        return ua.item.param_value if ua else DEFAULT_HAIR_COLOR
+
+    @staticmethod
+    def _dependent_for(user, item):
+        # The default dependent param to grant when `item` is first unlocked, or
+        # (None, None) when it has none. Mirrors DEPENDENT_RULES in src/lib/avatar.ts.
+        key, value = item.param_key, item.param_value
+        if key == 'accessories':
+            return 'accessoriesColor', DEFAULT_ACCESSORIES_COLOR
+        if key == 'clothing' and value == 'graphicShirt':
+            return 'clothingGraphic', DEFAULT_CLOTHING_GRAPHIC
+        if key == 'facialHair':
+            return 'facialHairColor', AvatarService._current_hair_color(user)
+        if key == 'top' and value in HAT_TOPS:
+            return 'hatColor', DEFAULT_HAT_COLOR
+        return None, None
+
+    @staticmethod
+    def _grant_dependent(*, user, item):
+        dep_key, dep_value = AvatarService._dependent_for(user, item)
+        if dep_key is None:
+            return
+        # First time only — never override a value the user already owns.
+        if UserAvatarItem.objects.filter(user=user, item__param_key=dep_key).exists():
+            return
+        dependent = AvatarItem.objects.filter(param_key=dep_key, param_value=dep_value).first()
+        if dependent is None:
+            return  # row not seeded — skip silently
+        AvatarService._grant(user=user, item=dependent, equip=True)
