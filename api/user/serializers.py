@@ -7,6 +7,9 @@ class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=8)
 
+    def validate_email(self, value):
+        return value.lower()
+
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -45,6 +48,9 @@ class UserSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
+
+    def validate_email(self, value):
+        return value.lower()
 
 
 class PatchAvatarSerializer(serializers.Serializer):

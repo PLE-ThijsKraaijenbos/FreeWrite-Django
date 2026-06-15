@@ -10,7 +10,7 @@ from .models import AvatarItem, User, UserAvatarItem, Userprofile
 class UserService:
     @staticmethod
     def register(*, email, password):
-        if User.objects.filter(email=email).exists():
+        if User.objects.filter(email__iexact=email).exists():
             raise EmailAlreadyExists()
 
         user = User.objects.create_user(email=email, password=password)
