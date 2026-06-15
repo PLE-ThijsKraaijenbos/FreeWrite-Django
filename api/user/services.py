@@ -1,3 +1,5 @@
+from urllib.parse import parse_qsl, urlparse
+
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
 from django.db import transaction
@@ -43,6 +45,7 @@ class UserService:
     def complete_profile(*, user, data):
         from journey.services import JourneyService
         Userprofile.objects.create(user=user, **data)
+        AvatarService.grant_default_items(user=user, avatar_url=data.get('avatar_url', ''))
         JourneyService.sync_with_profile(user=user)
 
         return {
@@ -54,6 +57,28 @@ class AvatarService:
     @staticmethod
     def update_avatar_url(*, user, avatar_url: str) -> None:
         Userprofile.objects.filter(user=user).update(avatar_url=avatar_url)
+
+    @staticmethod
+    def _parse_avatar_params(avatar_url: str) -> dict:
+        query = urlparse(avatar_url or '').query
+        return {k.replace('[]', ''): v for k, v in parse_qsl(query)}
+
+    @staticmethod
+    @transaction.atomic
+    def grant_default_items(*, user, avatar_url: str) -> None:
+        """
+        auto unlock default items after onboarding.
+        items are parsed from the avatar_url that's provided by the frontend.
+        """
+        params = AvatarService._parse_avatar_params(avatar_url)
+        for param_key, param_value in params.items():
+            item = AvatarItem.objects.filter(param_key=param_key, param_value=param_value).first()
+            if item is None:
+                continue
+            user_item, _ = UserAvatarItem.objects.get_or_create(user=user, item=item)
+            if not user_item.is_equipped:
+                user_item.is_equipped = True
+                user_item.save(update_fields=['is_equipped'])
 
     @staticmethod
     def equip_item(*, user, item_id):
