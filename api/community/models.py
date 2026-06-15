@@ -15,6 +15,7 @@ class Post(models.Model):
     title = models.TextField()
     body = models.TextField()
     image_url = models.TextField(blank=True, null=True)
+    tags = models.ManyToManyField('Tag', through='PostTag', related_name='posts')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -31,3 +32,20 @@ class PostLike(models.Model):
     class Meta:
         db_table = 'post_like'
         unique_together = [('user', 'post')]
+
+
+class Tag(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    value = models.TextField(unique=True)
+
+    class Meta:
+        db_table = 'tag'
+
+
+class PostTag(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='post_tags')
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name='post_tags')
+
+    class Meta:
+        db_table = 'post_tag'

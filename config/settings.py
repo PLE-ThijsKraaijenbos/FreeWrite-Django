@@ -217,6 +217,7 @@ UNFOLD = {
                 "title": "Community",
                 "items": [
                     {"title": "Posts", "icon": "forum", "link": reverse_lazy("admin:community_post_changelist")},
+                    {"title": "Tags", "icon": "sell", "link": reverse_lazy("admin:community_tag_changelist")},
                 ],
             }
         ],

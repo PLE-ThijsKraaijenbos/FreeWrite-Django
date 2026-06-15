@@ -3,9 +3,20 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Post
-from .serializers import PostCreateSerializer, PostSerializer, PostUpdateSerializer
+from .models import Post, Tag
+from .serializers import (
+    PostCreateSerializer,
+    PostSerializer,
+    PostUpdateSerializer,
+    TagSerializer,
+)
 from .services import PostService
+
+
+class TagListView(generics.ListAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    pagination_class = None
 
 
 class PostListCreateView(generics.ListCreateAPIView):
@@ -24,10 +35,9 @@ class PostListCreateView(generics.ListCreateAPIView):
 class PostDetailView(APIView):
     def patch(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
-        serializer = PostUpdateSerializer(data=request.data, partial=True)
+        serializer = PostUpdateSerializer(post, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        image = serializer.validated_data.pop('image', None)
-        updated_post = PostService.update_post(post=post, user=request.user, image=image, **serializer.validated_data)
+        updated_post = serializer.save(user=request.user)
         return Response(PostSerializer(updated_post, context={'request': request}).data)
 
     def delete(self, request, post_id):
