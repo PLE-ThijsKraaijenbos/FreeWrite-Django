@@ -3,7 +3,7 @@ from django.contrib.auth.models import update_last_login
 from django.db import transaction
 from django.db.models import F
 from rest_framework_simplejwt.tokens import RefreshToken
-from .exceptions import AvatarItemNotOwned, EmailAlreadyExists, InsufficientCoins, InvalidCredentials
+from .exceptions import AvatarItemNotOwned, EmailAlreadyExists, InsufficientCoins, InvalidCredentials, ProfileAlreadyExists
 from .models import AvatarItem, User, UserAvatarItem, Userprofile
 
 # `top` values that are head coverings rather than hair (mirror of the frontend
@@ -51,8 +51,12 @@ class UserService:
         }
 
     @staticmethod
+    @transaction.atomic
     def complete_profile(*, user, data, avatar):
         from journey.services import JourneyService
+        if Userprofile.objects.filter(user=user).exists():
+            raise ProfileAlreadyExists()
+
         Userprofile.objects.create(user=user, **data)
         AvatarService.grant_default_items(user=user, avatar=avatar)
         JourneyService.sync_with_profile(user=user)

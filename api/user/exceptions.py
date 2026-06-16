@@ -12,6 +12,12 @@ class InvalidCredentials(APIException):
     default_detail = "Invalid email or password."
 
 
+class ProfileAlreadyExists(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = "This account has already completed onboarding."
+    default_code = "profile_already_exists"
+
+
 class AvatarItemNotOwned(APIException):
     status_code = status.HTTP_403_FORBIDDEN
     default_detail = "You do not own this avatar item."
