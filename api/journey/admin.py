@@ -57,13 +57,13 @@ class JourneyAdmin(ModelAdmin):
 
 @admin.register(JournalContent)
 class JournalContentAdmin(ModelAdmin):
-    list_display = ['title_text']
+    list_display = ['title_text', 'input_field_placeholder']
     search_fields = ['title_text']
 
 
 @admin.register(LetterContent)
 class LetterContentAdmin(ModelAdmin):
-    list_display = ['title_text']
+    list_display = ['title_text', 'greeting_placeholder']
     search_fields = ['title_text']
 
 

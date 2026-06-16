@@ -103,7 +103,6 @@ class Userprofile(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    avatar_url = models.TextField(blank=True)
     name = models.TextField(blank=True)
     substance = models.CharField(max_length=20, choices=Substance.choices, blank=True)
     usage_duration = models.CharField(max_length=20, choices=Duration.choices, blank=True)

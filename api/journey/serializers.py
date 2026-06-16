@@ -10,13 +10,13 @@ from .models import (
 class JournalContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = JournalContent
-        fields = ['id', 'title_text']
+        fields = ['id', 'title_text', 'input_field_placeholder']
 
 
 class LetterContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = LetterContent
-        fields = ['id', 'title_text']
+        fields = ['id', 'title_text', 'greeting_placeholder']
 
 
 class ChoiceStoryContentSerializer(serializers.ModelSerializer):

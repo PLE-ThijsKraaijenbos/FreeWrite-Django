@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import AvatarItem, UserAvatarItem
-from .serializers import AvatarItemSerializer, LoginSerializer, PatchAvatarSerializer, RegisterSerializer, UserProfileSerializer, UserSerializer
+from .serializers import AvatarItemSerializer, LoginSerializer, ProfileUpdateSerializer, RegisterSerializer, UserProfileSerializer, UserSerializer
 from .services import AvatarService, UserService
 
 
@@ -29,7 +29,11 @@ class CompleteProfileView(APIView):
     def post(self, request):
         serializer = UserProfileSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        result = UserService.complete_profile(user=request.user, data=serializer.validated_data)
+        result = UserService.complete_profile(
+            user=request.user,
+            data=serializer.validated_data,
+            avatar=request.data.get('avatar') or {},
+        )
         return Response(UserSerializer(result['user']).data, status=status.HTTP_201_CREATED)
 
 
@@ -54,10 +58,10 @@ class ProfileView(APIView):
         return Response(UserSerializer(request.user).data)
 
     def patch(self, request):
-        serializer = PatchAvatarSerializer(data=request.data)
+        serializer = ProfileUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        AvatarService.update_avatar_url(user=request.user, avatar_url=serializer.validated_data['avatar_url'])
-        return Response(UserSerializer(request.user).data)
+        user = UserService.update_profile(user=request.user, **serializer.validated_data)
+        return Response(UserSerializer(user).data)
 
 
 class AvatarItemListView(APIView):
