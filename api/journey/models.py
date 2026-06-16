@@ -5,6 +5,7 @@ from django.db import models
 class JournalContent(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title_text = models.TextField()
+    input_field_placeholder = models.TextField()
 
     class Meta:
         db_table = 'journal_content'
@@ -13,6 +14,7 @@ class JournalContent(models.Model):
 class LetterContent(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title_text = models.TextField()
+    greeting_placeholder = models.TextField()
 
     class Meta:
         db_table = 'letter_content'
