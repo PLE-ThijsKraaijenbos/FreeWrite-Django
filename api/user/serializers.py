@@ -1,4 +1,6 @@
 from django.db.models import Exists, OuterRef
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from .models import AvatarItem, User, UserAvatarItem, Userprofile
 
@@ -32,6 +34,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'coins',
         ]
 
+    @extend_schema_field(OpenApiTypes.OBJECT)
     def get_avatar(self, obj):
         equipped = obj.user.avatar_items.filter(is_equipped=True).select_related('item')
         params = {ua.item.param_key: ua.item.param_value for ua in equipped}
@@ -73,3 +76,15 @@ class LoginSerializer(serializers.Serializer):
         return value.lower()
 
 
+class AuthResponseSerializer(serializers.Serializer):
+    """Shape of the body returned by register and login: a token pair plus the user."""
+
+    access = serializers.CharField()
+    refresh = serializers.CharField()
+    user = UserSerializer()
+
+
+class CompleteProfileRequestSerializer(UserProfileSerializer):
+    """Request body for completing onboarding: the profile answers plus the chosen avatar."""
+
+    avatar = serializers.DictField(child=serializers.CharField(), required=False)
