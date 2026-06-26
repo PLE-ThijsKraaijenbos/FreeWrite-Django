@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "drf_spectacular",
     "corsheaders",
     "user",
     "journey",
@@ -100,12 +101,77 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "FreeWrite API",
+    "VERSION": "1.0.0",
+    "DESCRIPTION": (
+        "This is the HTTP API behind FreeWrite, the app that helps people cut back on "
+        "or quit substance use. It backs the React Native client and covers three areas: "
+        "accounts and onboarding, the personal journey of writing exercises, and the "
+        "community feed.\n\n"
+        "## Authentication\n\n"
+        "Most endpoints need a logged in user. Authentication is JWT based. Call "
+        "`POST /api/user/login/` (or `register`) to get an `access` and a `refresh` token, "
+        "then send the access token on every following request as a header:\n\n"
+        "```\nAuthorization: Bearer <access token>\n```\n\n"
+        "Access tokens are short lived (5 minutes). When one expires, exchange your refresh "
+        "token at `POST /api/user/token/refresh/` for a fresh access token instead of asking "
+        "the user to log in again. Refresh tokens last 7 days.\n\n"
+        "A handful of endpoints are open and need no token: registration, login, token "
+        "refresh, and the health check.\n\n"
+        "## Conventions\n\n"
+        "All request and response bodies are JSON, except post creation and updates, which "
+        "accept `multipart/form-data` so an image file can be attached. List endpoints are "
+        "paginated 20 items per page unless noted otherwise. IDs are UUIDs unless the path "
+        "says otherwise. Timestamps are ISO 8601 in UTC.\n\n"
+        "## Errors\n\n"
+        "Errors come back with a matching HTTP status and a JSON body. Validation problems "
+        "are keyed by field name, while most business rule failures use a single `detail` "
+        "string, for example `{\"detail\": \"Not enough coins to purchase this item.\"}`."
+    ),
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
+    "TAGS": [
+        {
+            "name": "User",
+            "description": (
+                "Registration, login, token refresh, onboarding, the user profile, and the "
+                "avatar wardrobe. This is where an account is created and shaped before the "
+                "rest of the app becomes useful."
+            ),
+        },
+        {
+            "name": "Journey",
+            "description": (
+                "The user's personal path of writing exercises. The journey is a list of "
+                "steps that unlock one after another. These endpoints read the journey and "
+                "move a step through its lifecycle: start it, complete it, or bookmark it."
+            ),
+        },
+        {
+            "name": "Community",
+            "description": (
+                "The shared feed where users post, browse, tag, and like each other's "
+                "writing. Posts can carry an optional image and a set of tags."
+            ),
+        },
+        {
+            "name": "System",
+            "description": "Operational endpoints that are not tied to a specific feature, such as the health check.",
+        },
+    ],
+    "SWAGGER_UI_SETTINGS": {
+        "persistAuthorization": True,
+    },
 }
 
 CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default="http://localhost:3000", cast=Csv())

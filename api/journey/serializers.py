@@ -1,4 +1,6 @@
 import json
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from .models import (
     Journey, Phase, JourneyStep, JourneyStepProgress,
@@ -71,6 +73,7 @@ class JourneyStepSerializer(serializers.ModelSerializer):
     phase = PhaseNestedSerializer(read_only=True)
     content = serializers.SerializerMethodField()
 
+    @extend_schema_field(OpenApiTypes.OBJECT)
     def get_content(self, obj):
         entry = _CONTENT_FIELD_MAP.get(obj.assignment_type)
         if not entry:
@@ -101,3 +104,9 @@ class JourneySerializer(serializers.ModelSerializer):
     class Meta:
         model = Journey
         fields = ['id', 'step_progresses']
+
+
+class CompleteStepRequestSerializer(serializers.Serializer):
+    """Request body for completing a step."""
+
+    response_data = serializers.JSONField(required=False)

@@ -16,22 +16,22 @@ class PostSerializer(serializers.ModelSerializer):
     author_name = serializers.SerializerMethodField()
     tags = TagSerializer(many=True, read_only=True)
 
-    def get_likes_count(self, obj):
+    def get_likes_count(self, obj) -> int:
         return obj.likes.count()
 
-    def get_is_liked_by_user(self, obj):
+    def get_is_liked_by_user(self, obj) -> bool:
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return obj.likes.filter(user=request.user).exists()
         return False
 
-    def get_is_own_post(self, obj):
+    def get_is_own_post(self, obj) -> bool:
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return obj.author_id == request.user.id
         return False
 
-    def get_author_name(self, obj):
+    def get_author_name(self, obj) -> str | None:
         if obj.author and hasattr(obj.author, 'profile'):
             return obj.author.profile.name
         return None
@@ -47,11 +47,7 @@ class PostSerializer(serializers.ModelSerializer):
 
 class PostCreateSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(required=False, write_only=True, allow_null=True)
-    tag_ids = serializers.ListField(
-        child=serializers.UUIDField(),
-        required=False,
-        write_only=True
-    )
+    tag_ids = serializers.ListField(child=serializers.UUIDField(), required=False, write_only=True)
 
     def create(self, validated_data):
         from .services import PostService
@@ -67,11 +63,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
 
 class PostUpdateSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(required=False, write_only=True, allow_null=True)
-    tag_ids = serializers.ListField(
-        child=serializers.UUIDField(),
-        required=False,
-        write_only=True
-    )
+    tag_ids = serializers.ListField(child=serializers.UUIDField(), required=False, write_only=True)
 
     def update(self, instance, validated_data):
         from .services import PostService
