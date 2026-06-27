@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Post, Tag
+from .models import Comment, Post, Tag
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -43,6 +43,35 @@ class PostSerializer(serializers.ModelSerializer):
             'likes_count', 'is_liked_by_user', 'is_own_post',
             'author_name', 'created_at', 'tags',
         ]
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    likes_count = serializers.SerializerMethodField()
+    is_liked_by_user = serializers.SerializerMethodField()
+
+    def get_likes_count(self, obj) -> int:
+        return obj.likes.count()
+
+    def get_is_liked_by_user(self, obj) -> bool:
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.likes.filter(user=request.user).exists()
+        return False
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'body', 'likes_count', 'is_liked_by_user']
+
+
+class CommentCreateSerializer(serializers.ModelSerializer):
+    def create(self, validated_data):
+        from .services import CommentService
+        return CommentService.create_comment(**validated_data)
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'body']
+        read_only_fields = ['id']
 
 
 class PostCreateSerializer(serializers.ModelSerializer):

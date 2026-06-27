@@ -11,14 +11,16 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Post, Tag
+from .models import Comment, Post, Tag
 from .serializers import (
+    CommentCreateSerializer,
+    CommentSerializer,
     PostCreateSerializer,
     PostSerializer,
     PostUpdateSerializer,
     TagSerializer,
 )
-from .services import PostService
+from .services import CommentService, PostService
 
 
 _POST_ID_PARAM = OpenApiParameter(
@@ -26,6 +28,13 @@ _POST_ID_PARAM = OpenApiParameter(
     location=OpenApiParameter.PATH,
     type=OpenApiTypes.INT,
     description="ID of the post.",
+)
+
+_COMMENT_ID_PARAM = OpenApiParameter(
+    name='comment_id',
+    location=OpenApiParameter.PATH,
+    type=OpenApiTypes.INT,
+    description="ID of the comment.",
 )
 
 
@@ -123,6 +132,79 @@ class PostDetailView(APIView):
     def delete(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
         PostService.delete_post(post=post, user=request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema_view(
+    get=extend_schema(
+        tags=['Community'],
+        summary="List comments",
+        description="Returns the comments on a post, oldest first, paginated 20 per page. Each comment is annotated for the current user with the like count and whether they liked it.",
+        parameters=[_POST_ID_PARAM],
+        responses={200: CommentSerializer(many=True)},
+    ),
+    post=extend_schema(
+        tags=['Community'],
+        summary="Create a comment",
+        description="Adds a comment to a post. Returns the full comment.",
+        parameters=[_POST_ID_PARAM],
+        request=CommentCreateSerializer,
+        responses={
+            201: OpenApiResponse(response=CommentSerializer, description="Comment created."),
+            404: OpenApiResponse(description="No post with this ID."),
+        },
+    ),
+)
+class CommentListCreateView(generics.ListCreateAPIView):
+    def get_queryset(self):
+        return CommentService.get_comment_list(post_id=self.kwargs['post_id'])
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CommentCreateSerializer
+        return CommentSerializer
+
+    def create(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        serializer = CommentCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        comment = serializer.save(post=post)
+        return Response(
+            CommentSerializer(comment, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class CommentLikeView(APIView):
+    @extend_schema(
+        tags=['Community'],
+        summary="Like a comment",
+        description="Likes the comment for the current user. Idempotent: liking a comment you already liked is a no-op and still succeeds.",
+        parameters=[_POST_ID_PARAM, _COMMENT_ID_PARAM],
+        request=None,
+        responses={
+            200: OpenApiResponse(description="Comment liked, or already liked. No body."),
+            404: OpenApiResponse(description="No comment with this ID on this post."),
+        },
+    )
+    def post(self, request, post_id, comment_id):
+        comment = get_object_or_404(Comment, id=comment_id, post_id=post_id)
+        CommentService.like_comment(user=request.user, comment=comment)
+        return Response(status=status.HTTP_200_OK)
+
+    @extend_schema(
+        tags=['Community'],
+        summary="Unlike a comment",
+        description="Removes the current user's like from the comment. Safe to call even if there was no like.",
+        parameters=[_POST_ID_PARAM, _COMMENT_ID_PARAM],
+        responses={
+            204: OpenApiResponse(description="Like removed. No body."),
+            404: OpenApiResponse(description="No comment with this ID on this post."),
+        },
+    )
+    def delete(self, request, post_id, comment_id):
+        comment = get_object_or_404(Comment, id=comment_id, post_id=post_id)
+        CommentService.unlike_comment(user=request.user, comment=comment)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
