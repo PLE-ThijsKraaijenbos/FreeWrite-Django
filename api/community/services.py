@@ -1,7 +1,7 @@
 import cloudinary.uploader
 from rest_framework.exceptions import PermissionDenied
 
-from .models import Post, PostLike, Tag
+from .models import Comment, CommentLike, Post, PostLike, Tag
 
 
 class PostService:
@@ -49,3 +49,21 @@ class PostService:
     @staticmethod
     def unlike_post(*, user, post: Post) -> None:
         PostLike.objects.filter(user=user, post=post).delete()
+
+
+class CommentService:
+    @staticmethod
+    def get_comment_list(*, post_id):
+        return Comment.objects.filter(post_id=post_id).order_by('id')
+
+    @staticmethod
+    def create_comment(*, post: Post, body) -> Comment:
+        return Comment.objects.create(post=post, body=body)
+
+    @staticmethod
+    def like_comment(*, user, comment: Comment) -> None:
+        CommentLike.objects.get_or_create(user=user, comment=comment)
+
+    @staticmethod
+    def unlike_comment(*, user, comment: Comment) -> None:
+        CommentLike.objects.filter(user=user, comment=comment).delete()
