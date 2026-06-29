@@ -261,6 +261,13 @@ UNFOLD = {
                 ],
             },
             {
+                "title": "Avatar",
+                "items": [
+                    {"title": "Avatar Items", "icon": "checkroom", "link": reverse_lazy("admin:user_avataritem_changelist")},
+                    {"title": "User Avatar Items", "icon": "face", "link": reverse_lazy("admin:user_useravataritem_changelist")},
+                ],
+            },
+            {
                 "title": "Journey",
                 "items": [
                     {"title": "Phases", "icon": "layers", "link": reverse_lazy("admin:journey_phase_changelist")},
